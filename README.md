@@ -5,6 +5,9 @@ version : 1.0
 ## ダウンロードURL
 [For Mac](https://srv01.bitsend.jp/download/dd789a827132ac197edb682d46bd9039.html)
 
+## 動作イメージ  
+![image](https://github.com/peta345/todolist/wiki/sample.png)
+
 ### 説明書  
 テキストフィールドにイベントを入力し、Enterでリストが作られています。  
 完了したものはxボタンで終了させられます。  
