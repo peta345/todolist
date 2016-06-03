@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <link rel="stylesheet" href="./static/css/bootstrap.min.css">
+    <style>
+
+    html, body {
+	height:100%;
+	width: 100%;
+    }
+    .container {
+    	background-size: 150%;
+    	width:100%;
+    	height:100%;
+    	background-image: url(assets/image/back_class_normal.png);
+       /* 画像を常に天地左右の中央に配置 */
+        background-position: center center;
+        /* 画像をタイル状に繰り返し表示しない */
+        background-repeat: no-repeat;
+        /* コンテンツの高さが画像の高さより大きい時、動かないように固定 */
+        background-attachment: fixed;
+        background-size: cover;
+        background-color: #464646;
+    }
+    .row {
+    	height:100%;
+	    }
+    #content {
+	    height:100%;
+	    }
+    glcanvas {
+	height: 100%;
+    }
+    #outer {
+      height: 470px;
+      overflow-y: scroll;
+    }
+    #change_color {
+      background-color: #d9eeda;
+    }
+    </style>
+</head>
+<body onload="sampleApp1()">
+
+  <div class="container">
+  	<div class="row">
+  	    <div id="content" class="col-md-6 col-xs-6">
+      		<canvas id="glcanvas"></canvas>
+  	    </div>
+  	    <div class="col-md-6 col-xs-6">
+          <!-- 日付入力 -->
+          <label for="calendar" style="padding-top:10px" class="control-label">日付 :</label>
+          <input id="calendar" type="date" class="form-control" value="" style="width:50%; margin-bottom:25px">
+
+          <strong>予定:</strong>
+          <div class="input-group" style="">
+            	<span class="input-group-btn">
+            		<button id="change_color" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                  color
+            			<span class="caret"></span>
+            		</button>
+            		<ul class="dropdown-menu" role="menu">
+                  <li><a href="#" class="select_color">Green</a></li>
+            			<li><a href="#" class="select_color">Blue</a></li>
+            			<li><a href="#" class="select_color">Orange</a></li>
+            			<li><a href="#" class="select_color">Red</a></li>
+            		</ul>
+            	</span>
+            	<input id="in" type="text" class="form-control" placeholder="テキスト入力欄">
+          </div>
+            <!-- 予定入力 -->
+    		    <!-- <label for="in" style="padding-top:10px" class="control-label">予定.... <span id="close" class="glyphicon glyphicon-pencil" aria-hidden="true"></span></label>
+    		    <input id="in" type="text" class="form-control" placeholder="Text input"> -->
+
+          <!-- コンテンツ -->
+  		    <div id="outer">
+  		      <div id="todo"></div>
+  		    </div>
+  	    </div>
+  	</div>
+  </div>
+
+    <button class="btn btn-info" id="btnChange">Change</button>
+    <!-- <div id="myconsole"></div> -->
+
+    <audio src="./components/sound/otu.wav" preload="auto" id="sound"></audio>
+    <!-- Live2D Library -->
+    <script src="components/lib/live2d.min.js"></script>
+    <!-- Live2D Framework -->
+    <script src="components/framework/Live2DFramework.js"></script>
+    <!-- User's Script -->
+    <script src="components/src/utils/MatrixStack.js"></script>
+    <script src="components/src/utils/ModelSettingJson.js"></script>
+    <script src="components/src/PlatformManager.js"></script>
+    <script src="components/src/LAppDefine.js"></script>
+    <script src="components/src/LAppModel.js"></script>
+    <script src="components/src/LAppLive2DManager.js"></script>
+    <script src="components/src/SampleApp1.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+    <script src="static/js/jquery.min.js"></script>
+    <script src="static/js/bootstrap.min.js"></script>
+
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script> -->
+
+    <script>
+  // electronでjqueryを使えるようにするおまじない
+  try {
+       $ = jQuery = module.exports;
+       // If you want module.exports to be empty, uncomment:
+       // module.exports = {};
+   } catch(e) {}
+$(function(){
+  "use strict";
+
+  //色の配列
+  const COLOR_ARRAY = ["#d9eeda", "#e3f2fd", "#ffeacc", "#fff8f7"];
+  const BG_COLOR_ARRAY = ["bg-success", "bg-info", "bg-warning", "bg-danger"];
+  //リストの色。デフォルトが緑
+  var BG_COLOR = "bg-success";
+
+  //日付をゲットする関数
+  var getDate = function(){
+    let date = new Date();
+    let year = date.getFullYear();
+    let month = date.getMonth()+1;
+    let day = date.getDate();
+    var str;
+    if(month <10 && day < 10){
+      str = year + "-0" + month + "-0" + day;
+    } else if(month < 10){
+      str = year + "-0" + month + "-" + day;
+    } else if(day < 10){
+      str = year + "-" + month + "-0" + day;
+    } else {
+      str = year + "-" + month + "-" + day;
+    }
+    return str;
+  }
+
+  //日付を整形する
+  var scrapDate = function(text){
+    let strarr = text.split("-");
+    text = strarr[1] + "/" + strarr[2];
+    return text;
+  }
+  $('#calendar').val(getDate());
+  //canvas部分をいい感じにする
+  var w = $('#content').width();
+  var h = $('#content').height();
+  $('#glcanvas').attr('width', w);
+  $('#glcanvas').attr('height', h);
+
+   $('#in').keypress(function ( e ) { //キーが押された時に呼ばれるハンドラ
+   	if(e.which == 13){
+      var mes = $("#in").val(); // get value
+      var text = $("#calendar").val();
+      text = scrapDate(text);
+      $("#todo").append("<h4 style='padding:15px' class='bg-info'>" + text + " " + mes + "<button id='close' type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button></h4>");
+      $("#in").val(""); // value clear
+      return false;
+   	}
+   });
+
+   var switch_color = function(index){
+     $("#change_color").css("background-color", COLOR_ARRAY[index]);
+
+   }
+
+   // 色選択に対応した色をボタン色にする
+   $("a.select_color").on('click', function(){
+     var index = $("a.select_color").index(this);
+     console.log(typeof(tag));
+     switch_color(index);
+   });
+
+   $(document).on("click", "#close", function(){ //動的要素には$(document)
+     $(this).parent().remove();
+     var myaudio = document.getElementById('sound');
+     myaudio.play();
+   });
+
+
+});
+    </script>
+</body>
+</html>
