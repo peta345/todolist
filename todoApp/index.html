@@ -159,7 +159,7 @@ $(function(){
       var mes = $("#in").val(); // get value
       var text = $("#calendar").val();
       text = scrapDate(text);
-      $("#todo").append("<h4 style='padding:15px' class='bg-info'>" + text + " " + mes + "<button id='close' type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button></h4>");
+      $("#todo").append("<h4 style='padding:15px' class="+BG_COLOR+">" + text + " " + mes + "<button id='close' type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button></h4>");
       $("#in").val(""); // value clear
       return false;
    	}
@@ -167,7 +167,7 @@ $(function(){
 
    var switch_color = function(index){
      $("#change_color").css("background-color", COLOR_ARRAY[index]);
-
+     BG_COLOR = BG_COLOR_ARRAY[index];
    }
 
    // 色選択に対応した色をボタン色にする
