@@ -7,22 +7,22 @@
     <style>
 
     html, body {
-	height:100%;
-	width: 100%;
+    	height:100%;
+    	width: 100%;
     }
     .container {
     	background-size: 150%;
     	width:100%;
     	height:100%;
     	background-image: url(assets/image/back_class_normal.png);
-       /* 画像を常に天地左右の中央に配置 */
-        background-position: center center;
-        /* 画像をタイル状に繰り返し表示しない */
-        background-repeat: no-repeat;
-        /* コンテンツの高さが画像の高さより大きい時、動かないように固定 */
-        background-attachment: fixed;
-        background-size: cover;
-        background-color: #464646;
+     /* 画像を常に天地左右の中央に配置 */
+      background-position: center center;
+      /* 画像をタイル状に繰り返し表示しない */
+      background-repeat: no-repeat;
+      /* コンテンツの高さが画像の高さより大きい時、動かないように固定 */
+      background-attachment: fixed;
+      background-size: cover;
+      background-color: #464646;
     }
     .row {
     	height:100%;
@@ -43,7 +43,6 @@
     </style>
 </head>
 <body onload="sampleApp1()">
-
   <div class="container">
   	<div class="row">
   	    <div id="content" class="col-md-6 col-xs-6">
@@ -119,8 +118,21 @@ $(function(){
   //色の配列
   const COLOR_ARRAY = ["#d9eeda", "#e3f2fd", "#ffeacc", "#fff8f7"];
   const BG_COLOR_ARRAY = ["bg-success", "bg-info", "bg-warning", "bg-danger"];
-  //リストの色。デフォルトが緑
   var BG_COLOR = "bg-success";
+
+  const fs = require('fs');
+  const readline = require('readline');
+
+  var Readline = function(){
+    var rs = fs.createReadStream('./foo.txt');
+    var rl = readline.createInterface(rs, {});
+    rl.on('line', function(line) {
+      //console.log(line);
+      $("#todo").append("<h4 style='padding:15px' class="+BG_COLOR+">" + line + "<button id='close' type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button></h4>");
+    });
+  }
+
+  Readline();
 
   //日付をゲットする関数
   var getDate = function(){
@@ -147,6 +159,7 @@ $(function(){
     text = strarr[1] + "/" + strarr[2];
     return text;
   }
+
   $('#calendar').val(getDate());
   //canvas部分をいい感じにする
   var w = $('#content').width();
@@ -161,6 +174,12 @@ $(function(){
       text = scrapDate(text);
       $("#todo").append("<h4 style='padding:15px' class="+BG_COLOR+">" + text + " " + mes + "<button id='close' type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button></h4>");
       $("#in").val(""); // value clear
+
+      //file write
+      var str = text+" " +mes+"\n";
+      fs.appendFile('./foo.txt', str, (err) => {
+        if(err) throw err;
+      });
       return false;
    	}
    });
@@ -177,12 +196,31 @@ $(function(){
      switch_color(index);
    });
 
+   function fuga(){
+     console.log("helo");
+   }
+   // 削除処理
    $(document).on("click", "#close", function(){ //動的要素には$(document)
      $(this).parent().remove();
      var myaudio = document.getElementById('sound');
+     //お疲れ様でした！
      myaudio.play();
-   });
+     var word = $(this).parent().text();
+     word = word.substr(0, word.length-1);
+     console.log(word);
 
+     var rs = fs.createReadStream('./foo.txt');
+     var rl = readline.createInterface(rs, {});
+     rl.on('line', function(line) {
+       console.log(line);
+       if(line == word){
+         console.log("check pass");
+         line = "";
+       } else {
+         console.log("error");
+       }
+     });
+   });
 
 });
     </script>
