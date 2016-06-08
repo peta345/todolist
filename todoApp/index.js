@@ -1,41 +1,51 @@
-/*
- * index.js
- */
-
 'use strict';
-
-// アプリケーションをコントロールするモジュール
 var app = require('app');
-// ウィンドウを作成するモジュール
 var BrowserWindow = require('browser-window');
-// 起動 URL
-var currentURL = 'file://' + __dirname + '/index.html';
+var ipc = require('ipc');
+const fs = require('fs');
+const sqlite3 = require('sqlite3').verbose();
 
-// クラッシュレポート
-require('crash-reporter').start();
+var database_file = __dirname + '/db.sqlite3'
 
-// メインウィンドウ
+if (fs.existsSync(database_file)) {
+  var db = new sqlite3.Database(database_file);
+}else{
+  var db = new sqlite3.Database(database_file);
+  db.run('CREATE TABLE mytable (color TEXT, text TEXT);');
+}
 var mainWindow = null;
-
-// 全てのウィンドウが閉じたら終了
-app.on('window-all-closed', function() {
-  if (process.platform != 'darwin') {
-    app.quit();
-  }
+// 起動
+app.on('ready', function(){
+    mainWindow = new BrowserWindow({ width:1200, height:700 });
+    mainWindow.loadUrl('file://' + __dirname + '/index.html');
+    mainWindow.on('closed', function(){
+        db.close();
+        mainWindow = null;
+    });
+});
+var count = 0;
+//非同期プロセス通信
+ipc.on('Back_OpenDB', function(event){
+  console.log("pass done" + count);
+  count ++;
+  //db.each('SELECT rowid AS id, color text FROM mytable', function(err, row){
+  db.each('SELECT * FROM mytable', function(err, row){
+    if(err) console.log("エラーです");
+    //console.log(' : ' + row.color + row.text);
+    console.log("rowid = " + row.ROWID);
+    console.log("color = " + row.color);
+    console.log("text = " + row.text);
+  });
+    // レンダラプロセスへsend
+    //event.sender.send('async-reply', result);
 });
 
-// Electronの初期化完了後に実行
-app.on('ready', function() {
-  // メイン画面のサイズ
-  mainWindow = new BrowserWindow({width: 1200, height: 700});
-  // 起動 url を指定
-  mainWindow.loadUrl(currentURL);
-
-  // デベロッパーツールを表示
-  //mainWindow.toggleDevTools();
-
-  // ウィンドウが閉じられたらアプリも終了
-  mainWindow.on('closed', function() {
-    mainWindow = null;
-  });
+ipc.on('Back_WriteDB', function(event, args){
+  console.log("Back_WriteDB");
+  console.log("args = " + args);
+  console.log(args.data[0]);
+  console.log(args.data[1]);
+  db.run('INSERT INTO mytable VALUES ("' + args.data[0] + '","' + args.data[1] +'");');
+  // db.run('INSERT INTO mytable(color) VALUES ("' + args.data[0] + '");');
+  // db.run('INSERT INTO mytable(text) VALUES ("' + args.data[1] + '");');
 });
