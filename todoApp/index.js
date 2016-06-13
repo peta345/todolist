@@ -1,11 +1,14 @@
-'use strict';
-var app = require('app');
-var BrowserWindow = require('browser-window');
-var ipc = require('ipc');
-const fs = require('fs');
-const sqlite3 = require('sqlite3').verbose();
+"use strict";
 
-var database_file = __dirname + '/db.sqlite3'
+const electron = require("electron");
+const app = electron.app;
+const BrowserWindow = electron.BrowserWindow;
+const sqlite3 = require('sqlite3').verbose();
+const fs = require('fs');
+const ipcMain = electron.ipcMain;
+let mainWindow;
+
+var database_file = __dirname + '/db.sqlite3';
 
 if (fs.existsSync(database_file)) {
   var db = new sqlite3.Database(database_file);
@@ -13,39 +16,57 @@ if (fs.existsSync(database_file)) {
   var db = new sqlite3.Database(database_file);
   db.run('CREATE TABLE mytable (color TEXT, text TEXT);');
 }
-var mainWindow = null;
-// 起動
-app.on('ready', function(){
-    mainWindow = new BrowserWindow({ width:1200, height:700 });
-    mainWindow.loadUrl('file://' + __dirname + '/index.html');
-    mainWindow.on('closed', function(){
-        db.close();
-        mainWindow = null;
-    });
+// 全てのウィンドウが閉じたら終了
+app.on('window-all-closed', function() {
+  if (process.platform != 'darwin') {
+    db.close()
+    app.quit();
+  }
 });
-var count = 0;
+
+// Electronの初期化完了後に実行
+app.on('ready', function() {
+  // メイン画面の表示。ウィンドウの幅、高さを指定できる
+  mainWindow = new BrowserWindow({width: 1200, height: 700});
+  mainWindow.loadURL('file://' + __dirname + '/index.html');
+
+  // ウィンドウが閉じられたらアプリも終了
+  mainWindow.on('closed', function() {
+    db.close()
+    mainWindow = null;
+  });
+});
+
 //非同期プロセス通信
-ipc.on('Back_OpenDB', function(event){
-  console.log("pass done" + count);
-  count ++;
-  //db.each('SELECT rowid AS id, color text FROM mytable', function(err, row){
+ipcMain.on('Back_OpenDB', function(event){
+  var result = [];
   db.each('SELECT * FROM mytable', function(err, row){
     if(err) console.log("エラーです");
     //console.log(' : ' + row.color + row.text);
     console.log("rowid = " + row.ROWID);
     console.log("color = " + row.color);
     console.log("text = " + row.text);
+    result.push(row.color);
+    result.push(row.text);
+    console.log(result);
+  }, function(){
+    console.log(result[0]);
+    mainWindow.webContents.send('Back_OpenDB_reply', result);
   });
-    // レンダラプロセスへsend
-    //event.sender.send('async-reply', result);
 });
 
-ipc.on('Back_WriteDB', function(event, args){
-  console.log("Back_WriteDB");
+
+ipcMain.on('Back_WriteDB', function(event, args){
   console.log("args = " + args);
   console.log(args.data[0]);
   console.log(args.data[1]);
   db.run('INSERT INTO mytable VALUES ("' + args.data[0] + '","' + args.data[1] +'");');
-  // db.run('INSERT INTO mytable(color) VALUES ("' + args.data[0] + '");');
-  // db.run('INSERT INTO mytable(text) VALUES ("' + args.data[1] + '");');
 });
+
+ipcMain.on('Back_DeleteDB', function(event, args){
+  // console.log(word);
+  // console.log(word.word);
+  db.run('DELETE FROM mytable WHERE text = "' + args.word + '";');
+  console.log("delete sucsess");
+})
+//node-gyp rebuild --target=1.2.2 --arch=x64 --target_platform=darwin --dist-url=https://atom.io/download/atom-shell --module_name=node_sqlite3 --module_path=../lib/binding/electron-v1.2.2-darwin-x64

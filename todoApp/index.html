@@ -112,21 +112,6 @@
        // If you want module.exports to be empty, uncomment:
        // module.exports = {};
  } catch(e) {}
- //ipc通信
- // var ipc = require('ipc');
- // var ipc = require('ipc');
- // var OpenDB = function(){
- //   console.log("opendb boot");
- //   //メインプロセスにデータベースをopenするよう命令
- //   ipc.send('Back_OpenDB');
- //
- //   ipc.on('Back_OpenDB_reply', function(){
- //     console.log('返答パス');
- //     // $("#todo").append("<h4 style='padding:15px' class="+color+">" + text + "<button id='close' type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button></h4>");
- //   });
- // }
- //
- // OpenDB();
 
 $(function(){
   "use strict";
@@ -138,34 +123,29 @@ $(function(){
 
   const fs = require('fs');
   const readline = require('readline');
-  var ipc = require('ipc');
+  window.ipcRenderer = require('electron').ipcRenderer;
+
   var OpenDB = function(){
     console.log("opendb boot");
     //メインプロセスにデータベースをopenするよう命令
-    ipc.send('Back_OpenDB');
-
-    ipc.on('Back_OpenDB_reply', function(){
-      console.log('返答パス');
-      // $("#todo").append("<h4 style='padding:15px' class="+color+">" + text + "<button id='close' type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button></h4>");
-    });
+    ipcRenderer.send('Back_OpenDB');
   }
   OpenDB();
 
+  ipcRenderer.on('Back_OpenDB_reply', function(event, result){
+    console.log('返答パス');
+    console.log(result[0]);
+    for(var i=0;i<result.length-1; i += 2){
+      $("#todo").append("<h4 style='padding:15px' class="+result[i]+">" + result[i+1] + "<button id='close' type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button></h4>");
+    }
+  });
+
+
   var WriteDB = function(data){
-    ipc.send('Back_WriteDB', {data:data});
+    ipcRenderer.send('Back_WriteDB', {data:data});
   }
 
 
-  // var Readline = function(){
-  //   var rs = fs.createReadStream('./foo.txt');
-  //   var rl = readline.createInterface(rs, {});
-  //   rl.on('line', function(line) {
-  //     //console.log(line);
-  //     $("#todo").append("<h4 style='padding:15px' class="+BG_COLOR+">" + line + "<button id='close' type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button></h4>");
-  //   });
-  // }
-  //
-  // Readline();
 
   //日付をゲットする関数
   var getDate = function(){
@@ -208,15 +188,10 @@ $(function(){
       $("#todo").append("<h4 style='padding:15px' class="+BG_COLOR+">" + text + " " + mes + "<button id='close' type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button></h4>");
       $("#in").val(""); // value clear
       // write db
-      let data = []
+      let data = [];
       data.push(BG_COLOR);
       data.push(text+mes);
       WriteDB(data);
-      //file write
-      // var str = text+" " +mes+"\n";
-      // fs.appendFile('./foo.txt', str, (err) => {
-      //   if(err) throw err;
-      // });
       return false;
    	}
    });
@@ -240,19 +215,9 @@ $(function(){
      myaudio.play();
      var word = $(this).parent().text();
      word = word.substr(0, word.length-1);
-     console.log(word);
-
-    //  var rs = fs.createReadStream('./foo.txt');
-    //  var rl = readline.createInterface(rs, {});
-    //  rl.on('line', function(line) {
-    //    console.log(line);
-    //    if(line == word){
-    //      console.log("check pass");
-    //      line = "";
-    //    } else {
-    //      console.log("error");
-    //    }
-    //  });
+     //console.log(word);
+     //mainプロセスにcolumnを削除するよう命令
+     ipcRenderer.send('Back_DeleteDB', {word:word});
    });
 
 });
