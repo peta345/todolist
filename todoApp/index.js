@@ -14,7 +14,7 @@ if (fs.existsSync(database_file)) {
   var db = new sqlite3.Database(database_file);
 }else{
   var db = new sqlite3.Database(database_file);
-  db.run('CREATE TABLE mytable (color TEXT, text TEXT);');
+  db.run('CREATE TABLE mytable (id INTEGER,color TEXT, text TEXT);');
 }
 // 全てのウィンドウが閉じたら終了
 app.on('window-all-closed', function() {
@@ -32,6 +32,7 @@ app.on('ready', function() {
 
   // ウィンドウが閉じられたらアプリも終了
   mainWindow.on('closed', function() {
+    db.run('SELECT * FROM mytable ORDER BY id asc;');
     db.close()
     mainWindow = null;
   });
@@ -40,12 +41,12 @@ app.on('ready', function() {
 //非同期プロセス通信
 ipcMain.on('Back_OpenDB', function(event){
   var result = [];
-  db.each('SELECT * FROM mytable', function(err, row){
+  db.each('SELECT * FROM mytable ORDER BY id ASC', function(err, row){
     if(err) console.log("エラーです");
     //console.log(' : ' + row.color + row.text);
-    console.log("rowid = " + row.ROWID);
-    console.log("color = " + row.color);
-    console.log("text = " + row.text);
+    // console.log("rowid = " + row.ROWID);
+    // console.log("color = " + row.color);
+    // console.log("text = " + row.text);
     result.push(row.color);
     result.push(row.text);
     console.log(result);
@@ -57,10 +58,7 @@ ipcMain.on('Back_OpenDB', function(event){
 
 
 ipcMain.on('Back_WriteDB', function(event, args){
-  console.log("args = " + args);
-  console.log(args.data[0]);
-  console.log(args.data[1]);
-  db.run('INSERT INTO mytable VALUES ("' + args.data[0] + '","' + args.data[1] +'");');
+  db.run('INSERT INTO mytable VALUES ("' + args.data[0] + '","' + args.data[1] + '","' + args.data[2] + '");');
 });
 
 ipcMain.on('Back_DeleteDB', function(event, args){
@@ -69,4 +67,3 @@ ipcMain.on('Back_DeleteDB', function(event, args){
   db.run('DELETE FROM mytable WHERE text = "' + args.word + '";');
   console.log("delete sucsess");
 })
-//node-gyp rebuild --target=1.2.2 --arch=x64 --target_platform=darwin --dist-url=https://atom.io/download/atom-shell --module_name=node_sqlite3 --module_path=../lib/binding/electron-v1.2.2-darwin-x64

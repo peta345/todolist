@@ -49,9 +49,18 @@
       		<canvas id="glcanvas"></canvas>
   	    </div>
   	    <div class="col-md-6 col-xs-6">
-          <!-- 日付入力 -->
-          <label for="calendar" style="padding-top:10px" class="control-label">日付 :</label>
-          <input id="calendar" type="date" class="form-control" value="" style="width:50%; margin-bottom:25px">
+
+          <div class="row">
+            <div class="col-xs-8">
+              <!-- 日付入力 -->
+                <label for="calendar" style="padding-top:10px" class="control-label">日付 :</label>
+                <input id="calendar" type="date" class="form-control" value="" style=" margin-bottom:25px">
+            </div>
+            <div class="col-xs-4">
+              <buttn id="sort" type="button" class="btn btn-default"><span class="glyphicon glyphicon-sort-by-attributes"></span></buttn>
+              <!-- somethign  -->
+            </div>
+          </div>
 
           <strong>予定:</strong>
           <div class="input-group" style="">
@@ -180,7 +189,8 @@ $(function(){
   $('#glcanvas').attr('width', w);
   $('#glcanvas').attr('height', h);
 
-   $('#in').keypress(function ( e ) { //キーが押された時に呼ばれるハンドラ
+  //キーが押された時に呼ばれるハンドラ
+   $('#in').keypress(function ( e ) {
    	if(e.which == 13){
       var mes = $("#in").val(); // get value
       var text = $("#calendar").val();
@@ -188,13 +198,28 @@ $(function(){
       $("#todo").append("<h4 style='padding:15px' class="+BG_COLOR+">" + text + " " + mes + "<button id='close' type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button></h4>");
       $("#in").val(""); // value clear
       // write db
-      let data = [];
-      data.push(BG_COLOR);
-      data.push(text+mes);
-      WriteDB(data);
+      let data_list = [];
+      if(text.slice(0,1) == '0'){
+        var data = text.slice(1,2) + text.slice(3,4) + text.slice(4,5);
+        data = Number(data);
+      } else {
+        var data = text.slice(0,1) + text.slice(1,2) + text.slice(3,4) + text.slice(4,5)
+        data = Number(data);
+      }
+      console.log("data_list is " + data_list);
+      data_list.push(data)
+      data_list.push(BG_COLOR);
+      data_list.push(text+mes);
+      WriteDB(data_list);
       return false;
    	}
    });
+
+   //そーと処理
+   $("#sort").on("click", function(){
+     $("#todo").children().remove();
+     ipcRenderer.send('Back_OpenDB');
+   })
 
    var switch_color = function(index){
      $("#change_color").css("background-color", COLOR_ARRAY[index]);
